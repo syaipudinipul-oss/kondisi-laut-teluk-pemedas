@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Peta dan prakiraan kondisi laut Teluk Pemedas.">
+  <title>Kondisi Laut Teluk Pemedas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="top">
+      <div class="brand">
+        <span class="ico ico-waves" aria-hidden="true"></span>
+        <div>
+          <h1>Kondisi Laut Teluk Pemedas</h1>
+          <p id="hdr-coord">0°59.836′ LS · 117°9.087′ BT</p>
+        </div>
+      </div>
+      <div class="grow"></div>
+      <div class="stamp" role="status" aria-live="polite">
+        <span id="dot" class="dot load"></span>
+        <span id="stamp">Memuat data…</span>
+      </div>
+      <button id="btn-home" class="btn" type="button" title="Kembali ke titik Teluk Pemedas">Titik Pemedas</button>
+      <button id="btn-refresh" class="btn pri" type="button">Perbarui</button>
+    </header>
+
+    <main class="app">
+      <section class="mapwrap" aria-label="Peta kondisi laut">
+        <div id="map"></div>
+
+        <details class="ov layers">
+          <summary>Lapisan peta</summary>
+          <div class="opts" role="radiogroup" aria-label="Peta dasar">
+            <label><input type="radio" name="base" value="ocean" checked> Laut (batimetri)</label>
+            <label><input type="radio" name="base" value="sat"> Satelit</label>
+            <label><input type="radio" name="base" value="osm"> Peta jalan</label>
+          </div>
+          <div class="opts">
+            <label><input id="seamark" type="checkbox"> Rambu laut (OpenSeaMap)</label>
+          </div>
+        </details>
+
+        <div class="ov tabs" role="group" aria-label="Lapisan data peta">
+          <button type="button" data-layer="wave" aria-pressed="true">Gelombang</button>
+          <button type="button" data-layer="current" aria-pressed="false">Arus</button>
+          <button type="button" data-layer="wind" aria-pressed="false">Angin</button>
+        </div>
+
+        <div id="legend" class="ov legend" aria-live="polite"></div>
+        <div id="coords" class="ov coords"></div>
+
+        <div class="ov timeline">
+          <button id="btn-play" class="play" type="button" aria-label="Putar prakiraan">
+            <span id="play-ic" class="ico ico-play" aria-hidden="true"></span>
+          </button>
+          <div class="when">
+            <strong id="when">–</strong>
+            <span id="badge-now" class="badge" hidden>Sekarang</span>
+            <button id="btn-now" class="btn mini" type="button" hidden>Ke sekarang</button>
+          </div>
+          <span></span>
+          <div role="group" title="Pilih jam prakiraan" aria-label="Pilih jam prakiraan">
+            <input id="slider" type="range" value="0" min="0" max="0" step="1">
+          </div>
+          <div class="ends"><span id="t-a"></span><span id="t-b"></span></div>
+        </div>
+      </section>
+
+      <aside id="panel" class="panel">
+        <div id="msg"></div>
+        <div id="status" class="status lm1">
+          <div class="ic">·</div>
+          <div><div class="big">Memuat…</div></div>
+        </div>
+
+        <section>
+          <h2>Gelombang</h2>
+          <div id="g-wave" class="grid"></div>
+        </section>
+
+        <section>
+          <h2>Arus &amp; pasang surut</h2>
+          <div id="g-sea" class="grid"></div>
+        </section>
+
+        <section>
+          <h2>Angin &amp; cuaca</h2>
+          <div id="g-wx" class="grid"></div>
+        </section>
+
+        <section>
+          <h2>Perbandingan model prakiraan</h2>
+          <div id="cmp" class="cmp"></div>
+          <div class="charts">
+            <div class="chart">
+              <h3>Tinggi gelombang per model (m) <span id="wave-legend"></span></h3>
+              <div id="cWaveM" class="chartbox"></div>
+            </div>
+            <div class="chart">
+              <h3>Kecepatan angin 10 m per model (knot) <span id="wind-legend"></span></h3>
+              <div id="cWindM" class="chartbox"></div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2>Prakiraan 3 jam dari jam terpilih</h2>
+          <div id="strip" class="tblwrap"></div>
+        </section>
+
+        <section>
+          <h2>Grafik 6 hari (kemarin sampai +5 hari)</h2>
+          <div class="charts">
+            <div class="chart"><h3>Tinggi gelombang (m) <span id="lg-wave"></span></h3><div id="cWave" class="chartbox"></div></div>
+            <div class="chart"><h3>Angin 10 m (knot) <span id="lg-wind"></span></h3><div id="cWind" class="chartbox"></div></div>
+            <div class="chart"><h3>Kecepatan arus (knot)</h3><div id="cCur" class="chartbox"></div></div>
+            <div class="chart"><h3>Muka laut / pasang surut (m, terhadap MSL)</h3><div id="cTide" class="chartbox"></div></div>
+            <div class="chart"><h3>Curah hujan (mm/jam)</h3><div id="cRain" class="chartbox"></div></div>
+          </div>
+        </section>
+
+        <p class="foot">
+          Sumber: <a href="https://open-meteo.com/en/docs/marine-weather-api" rel="noopener" target="_blank">Open-Meteo Marine</a>
+          (gelombang, arus, suhu &amp; muka laut) dan <a href="https://open-meteo.com/en/docs" rel="noopener" target="_blank">Open-Meteo Forecast</a>
+          (angin &amp; cuaca). Perbandingan model: gelombang ECMWF WAM, NOAA GFS-Wave, DWD GWAM, Météo-France MFWAM; angin ECMWF IFS,
+          NOAA GFS, DWD ICON, UK Met Office. Ini adalah keluaran model, bukan pengukuran langsung di teluk. Pasang surut model global tidak
+          menggantikan tabel pasut resmi. Untuk keputusan pelayaran rujuk <a href="https://maritim.bmkg.go.id" rel="noopener" target="_blank">maritim.bmkg.go.id</a>.
+        </p>
+      </aside>
+    </main>
+  </div>
+
+  <noscript>Aplikasi ini memerlukan JavaScript untuk memuat prakiraan.</noscript>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="app.js"></script>
+</body>
+</html>
