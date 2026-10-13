@@ -500,19 +500,12 @@
       isFrom = true;
     }
     const rotation = ((direction + (isFrom ? 180 : 0)) % 360 + 360) % 360;
-    const step = .13;
-    for (let row = -2; row <= 2; row += 1) {
-      for (let column = -2; column <= 2; column += 1) {
-        if (row === 0 && column === 0) continue;
-        const variation = ((row * 7 + column * 11) % 13) - 6;
-        const shown = value * (1 + variation / 100);
-        const html = `<div class="arrow-glyph" style="transform:rotate(${rotation + variation}deg)">↑</div><small>${state.layer === 'wave' ? shown.toFixed(1) : shown.toFixed(0)} ${suffix}</small>`;
-        L.marker([state.point.lat + row * step, state.point.lon + column * step], {
-          interactive: false,
-          icon: L.divIcon({ className: 'data-arrow', html, iconSize: [25, 38], iconAnchor: [12, 19] })
-        }).addTo(state.arrows);
-      }
-    }
+    // Satu panah di atas pin: hanya nilai prakiraan titik ini, tanpa grid tiruan yang jatuh di daratan.
+    const html = `<div class="arrow-glyph" style="transform:rotate(${rotation}deg)">↑</div><small>${state.layer === 'wave' ? value.toFixed(1) : value.toFixed(0)} ${suffix}</small>`;
+    L.marker([state.point.lat, state.point.lon], {
+      interactive: false,
+      icon: L.divIcon({ className: 'data-arrow', html, iconSize: [25, 38], iconAnchor: [12, 68] })
+    }).addTo(state.arrows);
   }
 
   function renderLegend() {
