@@ -34,13 +34,11 @@
     data: null,
     selected: 0,
     now: 0,
-    layer: 'wave',
     playTimer: null,
     controller: null,
     requestId: 0,
     map: null,
     marker: null,
-    arrows: null,
     baseLayers: {},
     referenceLayer: null,
     activeBase: null,
@@ -472,50 +470,9 @@
 
   function renderMapData() {
     renderHeader();
-    renderLegend();
     if (!state.map || !state.data) return;
     state.marker.setLatLng([state.point.lat, state.point.lon]);
     state.marker.bindPopup(`<b>Titik prakiraan</b><br>${coordinateText(state.point.lat, state.point.lon)}`);
-    state.arrows.clearLayers();
-    const i = state.selected;
-    const marine = state.data.marine.hourly;
-    const weather = state.data.weather.hourly;
-    let direction;
-    let value;
-    let suffix;
-    let isFrom = false;
-    if (state.layer === 'wave') {
-      direction = at(marine.wave_direction, i, 0);
-      value = snapshot(i).waveAvg;
-      suffix = 'm';
-      isFrom = true;
-    } else if (state.layer === 'current') {
-      direction = at(marine.ocean_current_direction, i, 0);
-      value = currentInKnots(i);
-      suffix = 'kn';
-    } else {
-      direction = at(weather.wind_direction_10m, i, 0);
-      value = snapshot(i).windAvg;
-      suffix = 'kn';
-      isFrom = true;
-    }
-    const rotation = ((direction + (isFrom ? 180 : 0)) % 360 + 360) % 360;
-    // Satu panah di atas pin: hanya nilai prakiraan titik ini, tanpa grid tiruan yang jatuh di daratan.
-    const html = `<div class="arrow-glyph" style="transform:rotate(${rotation}deg)">↑</div><small>${state.layer === 'wave' ? value.toFixed(1) : value.toFixed(0)} ${suffix}</small>`;
-    L.marker([state.point.lat, state.point.lon], {
-      interactive: false,
-      icon: L.divIcon({ className: 'data-arrow', html, iconSize: [25, 38], iconAnchor: [12, 68] })
-    }).addTo(state.arrows);
-  }
-
-  function renderLegend() {
-    const legends = {
-      wave: ['Gelombang signifikan', 'linear-gradient(90deg,#7dd9f5,#0a6c8f,#f0a33a,#b3261e)', '0 m', '≥ 4 m', 'Arah panah menunjukkan arah rambat gelombang.'],
-      current: ['Kecepatan arus', 'linear-gradient(90deg,#c7f0ec,#1baf7a,#0a6c8f)', '0 kn', '≥ 2 kn', 'Arah panah menunjukkan arah arus menuju.'],
-      wind: ['Kecepatan angin', 'linear-gradient(90deg,#d5eef6,#4cc3e8,#eda100,#c9501a)', '0 kn', '≥ 34 kn', 'Arah panah menunjukkan arah angin bertiup.']
-    };
-    const [title, gradient, start, end, note] = legends[state.layer];
-    $('legend').innerHTML = `<b>${title}</b><div class="bar" style="background:${gradient}"></div><div class="lb"><span>${start}</span><span>${end}</span></div><div class="nt">${note}</div>`;
   }
 
   function initMap() {
@@ -532,7 +489,6 @@
     setBaseLayer('ocean');
     L.control.zoom({ position: 'topright' }).addTo(state.map);
     L.control.attribution({ position: 'bottomright', prefix: '<a href="https://leafletjs.com">Leaflet</a>' }).addTo(state.map).addAttribution('Esri, GEBCO, NOAA, Garmin');
-    state.arrows = L.layerGroup().addTo(state.map);
     state.marker = L.marker([HOME.lat, HOME.lon], {
       icon: L.divIcon({ className: 'pin', html: '<span></span>', iconSize: [22, 22], iconAnchor: [11, 11] })
     }).addTo(state.map);
@@ -551,7 +507,6 @@
     state.activeBase = state.baseLayers[name];
     state.activeBase.addTo(state.map);
     if (name === 'ocean') state.referenceLayer.addTo(state.map);
-    if (state.arrows) state.arrows.bringToFront?.();
     if (state.marker) state.marker.setZIndexOffset(1000);
   }
 
@@ -596,11 +551,6 @@
     $('btn-now').addEventListener('click', () => setSelected(state.now));
     $('btn-play').addEventListener('click', togglePlay);
     $('slider').addEventListener('input', (event) => { stopPlay(); setSelected(event.target.value); });
-    document.querySelectorAll('[data-layer]').forEach((button) => button.addEventListener('click', () => {
-      state.layer = button.dataset.layer;
-      document.querySelectorAll('[data-layer]').forEach((candidate) => candidate.setAttribute('aria-pressed', String(candidate === button)));
-      renderMapData();
-    }));
     document.querySelectorAll('input[name="base"]').forEach((input) => input.addEventListener('change', () => setBaseLayer(input.value)));
     $('seamark').addEventListener('change', (event) => {
       if (!state.map) return;
@@ -665,6 +615,5 @@
   initMap();
   bindEvents();
   renderHeader();
-  renderLegend();
   loadData();
 })();
